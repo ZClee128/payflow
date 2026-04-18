@@ -23,6 +23,7 @@ class User(Base):
     merchant_email = Column(String, nullable=True) # The email they use to forward receipts
     alipay_uid = Column(String, nullable=True) # Alipay PID/UID for jump links
     points_balance = Column(Float, default=0.0) # Commission points (RMB)
+    is_superadmin = Column(Boolean, default=False)
     
     products = relationship("Product", back_populates="merchant")
 

@@ -239,7 +239,6 @@
                 if (res.ok) {
                     const stats = await res.json();
                     document.getElementById("stat-sales").innerText = `¥${stats.total_sales.toFixed(2)}`;
-                    document.getElementById("stat-balance").innerText = `¥${stats.points_balance.toFixed(2)}`;
                     document.getElementById("stat-orders").innerText = stats.order_count;
                     document.getElementById("stat-pending").innerText = stats.pending_orders;
                     
@@ -248,14 +247,25 @@
                     document.getElementById("merchant-source-email").value = stats.merchant_email || "";
                     document.getElementById("merchant-alipay-uid").value = stats.alipay_uid || "";
                     
-                    if (stats.points_balance <= 0) {
-                        document.getElementById("stat-balance").style.color = "#ef4444";
-                    } else {
-                        document.getElementById("stat-balance").style.color = "#38bdf8";
-                    }
-                    
                     const merchantId = stats.merchant_id;
                     document.getElementById("store-url-display").innerText = `${window.location.origin}/store.html?merchant=${merchantId}`;
+                    
+                    // Super Admin Special Handling
+                    if (stats.is_superadmin) {
+                        const emailEl = document.getElementById("merchant-email");
+                        if (!emailEl.innerHTML.includes("SUPER ADMIN")) {
+                            emailEl.innerHTML += ' <span style="background:linear-gradient(135deg,#3b82f6,#6366f1); color:white; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:800; margin-left:8px; vertical-align:middle; box-shadow: 0 0 10px rgba(99,102,241,0.5);">SUPER ADMIN</span>';
+                        }
+                        document.getElementById("stat-balance").innerText = "UNLIMITED";
+                        document.getElementById("stat-balance").style.color = "#38bdf8";
+                    } else {
+                        document.getElementById("stat-balance").innerText = `¥${stats.points_balance.toFixed(2)}`;
+                        if (stats.points_balance <= 0) {
+                            document.getElementById("stat-balance").style.color = "#ef4444";
+                        } else {
+                            document.getElementById("stat-balance").style.color = "#38bdf8";
+                        }
+                    }
                 }
             } catch (err) {}
         }

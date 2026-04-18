@@ -49,8 +49,13 @@ def run_migrations():
             conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_source VARCHAR;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS alipay_uid VARCHAR;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS points_balance FLOAT DEFAULT 0.0;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE;"))
+            
+            # AUTO-GRANT SUPERADMIN TO THE OWNER
+            conn.execute(text("UPDATE users SET is_superadmin = TRUE WHERE email = 'zclee520@gmail.com';"))
+            
             conn.commit()
-            print("✅ Database schema is up to date.")
+            print("✅ Database schema is up to date (Super Admin Enabled).")
         except Exception as e:
             print(f"ℹ️ Migration notice: {e}")
 
@@ -78,11 +83,14 @@ def mark_order_as_paid(db: Session, merchant_id: int, amount: float, source: str
         order.paid_at = now
         order.payment_source = source
         
-        # DEDUCT COMMISSION FROM MERCHANT BALANCE
+        # DEDUCT COMMISSION FROM MERCHANT BALANCE (Skip for superadmins)
         merchant = db.query(models.User).filter(models.User.id == merchant_id).first()
         if merchant:
-            merchant.points_balance = round(merchant.points_balance - order.commission_fee, 4)
-            print(f"💰 Deducted ¥{order.commission_fee} commission from merchant {merchant_id}. Balance: ¥{merchant.points_balance}")
+            if merchant.is_superadmin:
+                print(f"⭐️ SuperAdmin {merchant_id}: Skipping commission deduction.")
+            else:
+                merchant.points_balance = round(merchant.points_balance - order.commission_fee, 4)
+                print(f"💰 Deducted ¥{order.commission_fee} commission from merchant {merchant_id}. Balance: ¥{merchant.points_balance}")
         
         db.commit()
         print(f"✅ Order #{order.id} marked as PAID via {source}.")
@@ -278,9 +286,11 @@ async def create_order(product_id: int, request: Request, db: Session = Depends(
     # ... (skipping merchant balance check, etc for diff accuracy) ...
     # (re-pasting the full logic to ensure correctness)
     merchant = product.merchant
-    min_points_required = round(product.price * 0.01, 2)
-    if merchant.points_balance < min_points_required:
-         raise HTTPException(status_code=403, detail="Merchant balance too low. Please contact the administrator.")
+    # Super Admin Check: skip balance check
+    if not merchant.is_superadmin:
+        min_points_required = round(product.price * 0.01, 2)
+        if merchant.points_balance < min_points_required:
+             raise HTTPException(status_code=403, detail="Merchant balance too low. Please contact the administrator.")
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     # Clean up expired orders first for this merchant
@@ -333,7 +343,9 @@ async def confirm_payment(order_id: int, db: Session = Depends(get_db), current_
         order.status = "paid"
         order.paid_at = datetime.now(timezone.utc).replace(tzinfo=None)
         order.payment_source = "manual"
-        current_user.points_balance = round(current_user.points_balance - order.commission_fee, 4)
+        if not current_user.is_superadmin:
+            current_user.points_balance = round(current_user.points_balance - order.commission_fee, 4)
+            print(f"💰 Manual Confirm: Deducted ¥{order.commission_fee} from {current_user.id}")
         db.commit()
     return {"status": "paid"}
 
@@ -371,7 +383,8 @@ async def get_merchant_stats(db: Session = Depends(get_db), current_user: models
         "callback_key": current_user.callback_key,
         "merchant_email": current_user.merchant_email,
         "alipay_uid": current_user.alipay_uid,
-        "points_balance": round(current_user.points_balance, 2)
+        "points_balance": round(current_user.points_balance, 2),
+        "is_superadmin": current_user.is_superadmin
     }
 
 @app.post("/api/merchant/settings")
