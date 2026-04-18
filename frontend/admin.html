@@ -306,7 +306,7 @@
                 const container = document.getElementById("product-list-container");
                 if (products.length === 0) { container.innerHTML = '<p class="subtitle">暂无商品</p>'; return; }
                 let html = '<table><thead><tr><th>名称</th><th>价格</th><th>预览</th></tr></thead><tbody>';
-                products.forEach(p => { html += `<tr><td>${p.name}</td><td>¥${p.price.toFixed(2)}</td><td><a href="index.html?id=${p.id}" target="_blank" class="action-link">预览</a></td></tr>`; });
+                products.forEach(p => { html += `<tr><td>${p.name}</td><td>¥${p.price.toFixed(2)}</td><td><a href="pay.html?id=${p.id}" target="_blank" class="action-link">预览</a></td></tr>`; });
                 container.innerHTML = html + '</tbody></table>';
             } catch (err) {}
         }
