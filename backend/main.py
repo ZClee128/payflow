@@ -214,8 +214,10 @@ async def register(email: str = Form(...), password: str = Form(...), db: Sessio
 @app.post("/api/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    if not user:
+        raise HTTPException(status_code=404, detail="账号不存在，请先注册")
+    if not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="密码错误")
     return {"access_token": create_access_token(data={"sub": user.email}), "token_type": "bearer"}
 
 @app.get("/api/merchants/{merchant_id}/info")

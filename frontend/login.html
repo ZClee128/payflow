@@ -92,16 +92,19 @@
                         body: formData
                     });
                     
-                    if (res.ok) {
-                        const data = await res.json();
-                        localStorage.setItem("payflow_token", data.access_token);
-                        window.location.href = "admin.html";
+                    if (res.status === 404) {
+                        alert("账号不存在，点击下方链接进行注册");
+                        if (!isRegister) toggleMode();
+                    } else if (res.status === 401) {
+                        alert("密码错误，请检查后再试");
                     } else {
-                        alert("邮箱或密码错误");
+                        const data = await res.json();
+                        alert(data.detail || "登录失败");
                     }
                 }
             } catch (err) {
-                alert("连接服务器失败");
+                console.error("Fetch Error:", err);
+                alert("连接服务器失败！说明：\n1. 请检查网络是否正常\n2. 请确认 Vercel 环境变量（如 DATABASE_URL）已配置正确\n3. 如果是本地测试，请确保后端 8000 端口已启动");
             } finally {
                 btn.disabled = false;
                 btn.innerText = isRegister ? "立即注册" : "立即登录";
