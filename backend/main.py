@@ -155,6 +155,8 @@ def check_emails_once():
         print(f"❌ Email Sync Error: {e}")
     return count
 
+app = FastAPI(title="PayFlow API", lifespan=lifespan)
+
 @app.get("/api/worker/check-emails")
 async def trigger_email_check(token: str = Query(None)):
     """
@@ -166,14 +168,6 @@ async def trigger_email_check(token: str = Query(None)):
     
     count = check_emails_once()
     return {"status": "success", "processed_orders": count}
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    thread = threading.Thread(target=monitor_email_inbox, daemon=True)
-    thread.start()
-    yield
-
-app = FastAPI(title="PayFlow API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
