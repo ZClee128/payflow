@@ -92,7 +92,11 @@
                         body: formData
                     });
                     
-                    if (res.status === 404) {
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem("payflow_token", data.access_token);
+                        window.location.href = "admin.html";
+                    } else if (res.status === 404) {
                         alert("账号不存在，点击下方链接进行注册");
                         if (!isRegister) toggleMode();
                     } else if (res.status === 401) {
