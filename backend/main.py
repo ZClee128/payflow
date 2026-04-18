@@ -286,10 +286,10 @@ async def create_order(product_id: int, request: Request, db: Session = Depends(
     
     alipay_url = f"alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&userId={merchant.alipay_uid}&amount={final_amount}" if merchant.alipay_uid else None
     
-    # BRIDGE QR: Generate a QR that points to this very site on mobile
+    # BRIDGE QR: Generate a QR that points to the dedicated pay.html site on mobile
     import urllib.parse
     base_url = str(request.base_url).rstrip('/')
-    bridge_url = f"{base_url}/index.html?order_id={db_order.id}"
+    bridge_url = f"{base_url}/pay.html?order_id={db_order.id}"
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={urllib.parse.quote(bridge_url)}&margin=10"
 
     return {

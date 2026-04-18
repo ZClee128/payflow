@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayFlow - 确认付款</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .copy-toast { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; }
+        .btn-alipay { background: #00A1E9 !important; margin-bottom: 12px; display: none; }
+        .warning-text { color: #ef4444; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.05); padding: 8px; border-radius: 8px; margin: 12px 0; border: 1px dashed #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div id="copy-toast" class="copy-toast">金额已自动复制</div>
+        
+        <!-- Back to Store Link -->
+        <div id="back-to-store" style="display: none; margin-bottom: 20px;">
+            <a href="#" id="store-link" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600;">← 返回店铺首页</a>
+        </div>
+
+        <!-- Main Product Card -->
+        <div class="card" id="product-card">
+            <h1 id="product-name">正在加载商品...</h1>
+            <p class="subtitle" id="product-desc">请稍候</p>
+            
+            <div class="price-tag">
+                <span>¥</span><span id="product-price">0.00</span>
+            </div>
+
+            <button class="btn" id="buy-btn" onclick="createOrder()">
+                立即获取
+            </button>
+        </div>
+
+        <!-- Payment Card (Initially Hidden) -->
+        <div class="card" id="payment-card" style="display: none;">
+            <h1>确认付款</h1>
+            <p class="subtitle">请扫以下二维码付款，金额务必精确</p>
+            
+            <div class="price-tag" style="color: #ef4444;">
+                <span>¥</span><span id="pay-amount">0.00</span>
+            </div>
+
+            <div class="qr-container">
+                <img id="qr-image" src="" alt="收款码">
+            </div>
+
+            <div class="warning-text">
+                ⚠️ 注意：必须支付上方显示的【带分的精准金额】，多付或少付都无法自动发货。
+            </div>
+
+            <button class="btn btn-alipay" id="alipay-jump-btn">
+                支付宝一键秒付
+            </button>
+
+            <p class="subtitle" style="text-align: center; margin-bottom: 20px;">
+                支付成功后回点击下方按钮获取内容
+            </p>
+
+            <button class="btn" id="confirm-btn" onclick="confirmPayment()">
+                我已支付
+            </button>
+            <button class="btn btn-secondary" onclick="showProduct()">
+                返回
+            </button>
+        </div>
+
+        <!-- Success/Delivery Card (Initially Hidden) -->
+        <div class="card" id="delivery-card" style="display: none;">
+            <h1 style="color: var(--success);">支付成功！</h1>
+            <p class="subtitle">感谢您的购买，这是您的发货内容：</p>
+            
+            <div class="alert show" id="delivery-content" style="word-break: break-all; font-family: monospace;">
+                <!-- Content here -->
+            </div>
+
+            <p class="subtitle" style="margin-top: 20px;">
+                请及时保存以上内容。
+            </p>
+
+            <button class="btn" onclick="location.reload()">
+                关闭
+            </button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
