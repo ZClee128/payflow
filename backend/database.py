@@ -20,6 +20,10 @@ else:
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# PGBouncer Cleanup: psycopg2 doesn't like the '?pgbouncer=true' parameter
+if "postgresql" in SQLALCHEMY_DATABASE_URL and "?" in SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.split("?")[0]
+
 # PGBouncer / Supabase specific tuning
 engine_args = {}
 if "postgresql" in SQLALCHEMY_DATABASE_URL:
