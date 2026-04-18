@@ -21,6 +21,11 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from contextlib import asynccontextmanager
 
+# Support for Vercel deployment imports
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import models, database
 from database import engine, get_db, SessionLocal
 
