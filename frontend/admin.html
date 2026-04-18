@@ -99,8 +99,8 @@
                             <th style="text-align: left; padding: 12px;">时间</th>
                             <th style="text-align: left; padding: 12px;">订单 ID (点击复制)</th>
                             <th style="text-align: left; padding: 12px;">商品</th>
-                            <th style="text-align: left; padding: 12px;">金额</th>
-                            <th style="text-align: left; padding: 12px;">实收</th>
+                            <th style="text-align: left; padding: 12px;">订单金额</th>
+                            <th style="text-align: left; padding: 12px;">手续费</th>
                             <th style="text-align: left; padding: 12px;">状态</th>
                             <th style="text-align: left; padding: 12px;">操作</th>
                         </tr>
@@ -340,7 +340,7 @@
                         <td style="padding: 12px;"><code onclick="copyToClipboard('${fullNo}', '订单号已复制')" style="cursor: pointer; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${fullNo}</code></td>
                         <td style="padding: 12px; font-weight: 600;">${o.product_name}</td>
                         <td style="padding: 12px; font-weight: 800; color: #38bdf8;">¥${o.amount.toFixed(2)}</td>
-                        <td style="padding: 12px; color: #10b981; font-weight: 600;">¥${o.net_profit.toFixed(2)}</td>
+                        <td style="padding: 12px; color: #ef4444; font-size: 12px;">- ¥${(o.amount - o.net_profit).toFixed(2)}</td>
                         <td style="padding: 12px;">${statusHtml}</td>
                         <td style="padding: 12px;">${action}</td>
                     `;
