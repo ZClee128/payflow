@@ -82,7 +82,7 @@
                 products.forEach(p => {
                     const card = document.createElement("div");
                     card.className = "product-card";
-                    card.onclick = () => window.location.href = `index.html?id=${p.id}`;
+                    card.onclick = () => window.location.href = `pay.html?id=${p.id}`;
                     card.innerHTML = `
                         <div class="p-name">${p.name}</div>
                         <div class="p-price">¥${p.price.toFixed(2)}</div>
