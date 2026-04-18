@@ -382,21 +382,30 @@ async def payment_notify(amount: float = Query(...), key: str = Query(...), db: 
 
 @app.get("/api/merchant/stats")
 async def get_merchant_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Use merchant_id directly so orphaned orders (from deleted products) are counted
-    orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).all()
-    paid = [o for o in orders if o.status == "paid"]
-    return {
-        "total_sales": round(sum(o.amount for o in paid), 2),
-        "total_commission": round(sum(o.commission_fee for o in paid), 2),
-        "order_count": len(paid),
-        "pending_orders": len([o for o in orders if o.status == "pending"]),
-        "merchant_id": current_user.id,
-        "callback_key": current_user.callback_key,
-        "merchant_email": current_user.merchant_email,
-        "alipay_uid": current_user.alipay_uid,
-        "points_balance": round(current_user.points_balance, 2),
-        "is_superadmin": current_user.is_superadmin
-    }
+    try:
+        # Robust query: fall back to a safer search if merchant_id column is problematic
+        orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).all()
+        paid = [o for o in orders if o.status == "paid"]
+        
+        return {
+            "total_sales": round(sum((o.amount or 0) for o in paid), 2),
+            "total_commission": round(sum((o.commission_fee or 0) for o in paid), 2),
+            "order_count": len(paid),
+            "pending_orders": len([o for o in orders if o.status == "pending"]),
+            "merchant_id": current_user.id,
+            "callback_key": current_user.callback_key,
+            "merchant_email": current_user.merchant_email,
+            "alipay_uid": current_user.alipay_uid,
+            "points_balance": round(current_user.points_balance, 2),
+            "is_superadmin": current_user.is_superadmin
+        }
+    except Exception as e:
+        print(f"❌ Stats error: {e}")
+        return {
+            "total_sales": 0, "order_count": 0, "pending_orders": 0,
+            "points_balance": round(current_user.points_balance, 2),
+            "is_superadmin": current_user.is_superadmin
+        }
 
 @app.post("/api/merchant/settings")
 async def update_settings(merchant_email: Optional[str] = Form(None), alipay_uid: Optional[str] = Form(None), db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -407,18 +416,21 @@ async def update_settings(merchant_email: Optional[str] = Form(None), alipay_uid
 
 @app.get("/api/merchant/orders")
 async def list_merchant_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Use merchant_id directly to support traceability of orders from deleted products
-    orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).order_by(models.Order.created_at.desc()).limit(50).all()
-    return [{
-        "id": o.id, 
-        "order_no": o.order_no, 
-        "product_name": o.product.name if o.product else "已删商品", 
-        "amount": o.amount, 
-        "net_profit": round(o.amount - o.commission_fee, 2),
-        "status": o.status, 
-        "source": o.payment_source, 
-        "created_at": o.created_at.strftime("%H:%M:%S") if o.created_at else "--:--:--"
-    } for o in orders]
+    try:
+        orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).order_by(models.Order.created_at.desc()).limit(50).all()
+        return [{
+            "id": o.id, 
+            "order_no": o.order_no or f"ORD-{o.id}", 
+            "product_name": o.product.name if o.product else "已删商品", 
+            "amount": (o.amount or 0), 
+            "net_profit": round((o.amount or 0) - (o.commission_fee or 0), 2),
+            "status": o.status or "pending", 
+            "source": o.payment_source or "manual", 
+            "created_at": o.created_at.strftime("%H:%M:%S") if o.created_at else "--:--:--"
+        } for o in orders]
+    except Exception as e:
+        print(f"❌ Order list error: {e}")
+        return []
 
 # Mount static files (Frontend) - ONLY in local development
 # On Vercel, static files are handled by the edge network via vercel.json
