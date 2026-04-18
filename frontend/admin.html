@@ -326,6 +326,9 @@
                     const fullNo = o.order_no || `ORD-${o.id}`;
                     const action = o.status === 'pending' ? `<button class="btn btn-sm" onclick="confirmOrder(${o.id})">标记到账</button>` : '';
                     
+                    // Local Time Conversion
+                    const localTime = o.created_at ? new Date(o.created_at).toLocaleTimeString() : "--:--:--";
+                    
                     // Status Badge Mapping
                     let statusHtml = "";
                     if (o.status === "paid") statusHtml = '<span class="status-badge status-paid">已支付</span>';
@@ -333,7 +336,7 @@
                     else statusHtml = '<span class="status-badge status-expired">已失效</span>';
 
                     row.innerHTML = `
-                        <td style="padding: 12px; font-size: 11px; color: var(--text-muted);">${o.created_at}</td>
+                        <td style="padding: 12px; font-size: 11px; color: var(--text-muted);">${localTime}</td>
                         <td style="padding: 12px;"><code onclick="copyToClipboard('${fullNo}', '订单号已复制')" style="cursor: pointer; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${fullNo}</code></td>
                         <td style="padding: 12px; font-weight: 600;">${o.product_name}</td>
                         <td style="padding: 12px; font-weight: 800; color: #38bdf8;">¥${o.amount.toFixed(2)}</td>

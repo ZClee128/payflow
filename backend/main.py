@@ -428,7 +428,7 @@ async def list_merchant_orders(db: Session = Depends(get_db), current_user: mode
             "net_profit": round((o.amount or 0) - (o.commission_fee or 0), 2),
             "status": o.status or "pending", 
             "source": o.payment_source or "manual", 
-            "created_at": o.created_at.strftime("%H:%M:%S") if o.created_at else "--:--:--"
+            "created_at": o.created_at.isoformat() + "Z" if o.created_at else None
         } for o in orders]
     except Exception as e:
         print(f"❌ Order list error: {e}")
