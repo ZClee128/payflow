@@ -47,7 +47,9 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
+    order_no = Column(String, unique=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
+    merchant_id = Column(Integer) # Tracks the owner even if product is deleted
     amount = Column(Float)  # Final amount including offset
     unique_offset = Column(Float, default=0.0)
     commission_fee = Column(Float, default=0.0)
