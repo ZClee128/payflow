@@ -374,8 +374,8 @@ async def list_merchant_orders(db: Session = Depends(get_db), current_user: mode
         "status": o.status, "source": o.payment_source, "created_at": o.created_at.strftime("%H:%M:%S")
     } for o in orders]
 
-frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "public"))
+app.mount("/", StaticFiles(directory=public_dir, html=True), name="public")
 
 if __name__ == "__main__":
     import uvicorn
