@@ -214,7 +214,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 async def register(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if db.query(models.User).filter(models.User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    db.add(models.User(email=email, hashed_password=get_password_hash(password)))
+    db.add(models.User(email=email, hashed_password=get_password_hash(password), points_balance=5.0))
     db.commit()
     return {"message": "User created successfully"}
 
