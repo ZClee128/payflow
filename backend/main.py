@@ -383,8 +383,12 @@ async def list_merchant_orders(db: Session = Depends(get_db), current_user: mode
         "status": o.status, "source": o.payment_source, "created_at": o.created_at.strftime("%H:%M:%S")
     } for o in orders]
 
-public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "public"))
-app.mount("/", StaticFiles(directory=public_dir, html=True), name="public")
+# Mount static files (Frontend) - ONLY in local development
+# On Vercel, static files are handled by the edge network via vercel.json
+if not os.getenv("VERCEL"):
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+    if os.path.exists(frontend_dir):
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
