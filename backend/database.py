@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get connection string from environment variable
-# Supabase provides this in the "Connect" -> "Transaction pooler" section
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not SQLALCHEMY_DATABASE_URL:
+if SQLALCHEMY_DATABASE_URL:
+    # Remove potential quotes or whitespace that might have been pasted in cloud settings
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.strip().strip('"').strip("'")
+else:
+    # Local fallback
     SQLALCHEMY_DATABASE_URL = "sqlite:///./payflow.db"
 
 # For PostgreSQL compatibility
