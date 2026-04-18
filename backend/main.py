@@ -278,6 +278,16 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
     if not p: raise HTTPException(status_code=404, detail="Product not found")
     return {"id": p.id, "name": p.name, "price": p.price, "description": p.description, "qr_code_path": p.qr_code_path, "merchant_id": p.merchant_id}
 
+@app.delete("/api/products/{product_id}")
+async def delete_product(product_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id, models.Product.merchant_id == current_user.id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found or unauthorized")
+    
+    db.delete(product)
+    db.commit()
+    return {"message": "Product deleted successfully"}
+
 @app.post("/api/orders")
 async def create_order(product_id: int, request: Request, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()

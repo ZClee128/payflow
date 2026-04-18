@@ -93,16 +93,42 @@
                 <span class="action-link" onclick="fetchOrders()">刷新</span>
             </div>
             <div id="orders-list-container">
-                <p class="subtitle">订单加载中...</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px;">时间</th>
+                            <th style="text-align: left; padding: 12px;">订单 ID (点击复制)</th>
+                            <th style="text-align: left; padding: 12px;">商品</th>
+                            <th style="text-align: left; padding: 12px;">金额</th>
+                            <th style="text-align: left; padding: 12px;">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-list">
+                        <!-- Orders will be loaded here -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- Product List -->
-        <div class="card">
-            <h2 style="font-size: 18px; margin-bottom: 12px;">商品管理</h2>
-            <div id="product-list-container">
-                <p class="subtitle">商品加载中...</p>
+        <div class="card" style="margin-top: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin: 0; font-size: 18px;">商品管理</h2>
+                <button class="btn btn-sm" onclick="showAddProduct()">+ 发布新商品</button>
             </div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                        <th style="text-align: left; padding: 12px;">名称</th>
+                        <th style="text-align: left; padding: 12px;">价格</th>
+                        <th style="text-align: right; padding: 12px;">预览</th>
+                        <th style="text-align: right; padding: 12px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="products-list">
+                    <!-- Products will be loaded here -->
+                </tbody>
+            </table>
         </div>
 
         <!-- Automation Settings (Zero-App config) -->
@@ -290,23 +316,11 @@
 
         async function fetchOrders() {
             try {
-                const res = await fetch(`${API_BASE}/merchant/orders`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-                const orders = await res.json();
-                const container = document.getElementById("orders-list-container");
-                if (orders.length === 0) { container.innerHTML = '<p class="subtitle">暂无订单记录</p>'; return; }
-
-                let html = '<table><thead><tr><th>时间</th><th>商品</th><th>金额</th><th>实收(扣佣)</th><th>来源</th><th>状态</th><th>操作</th></tr></thead><tbody>';
+                const ordersRes = await fetch(`${API_BASE}/merchant/orders`, { headers: { "Authorization": `Bearer ${token}` } });
+                const orders = await ordersRes.json();
+                const ordersList = document.getElementById("orders-list");
+                ordersList.innerHTML = "";
                 orders.forEach(o => {
-                    const statusClass = `status-${o.status}`;
-                    const statusText = o.status === 'paid' ? '已支付' : (o.status === 'expired' ? '已过期' : '等待中');
-                    
-                    // Source Icon Logic
-                    let sourceHtml = '<span title="手动确认">👤</span>';
-                    if (o.source === 'email') sourceHtml = '<span title="邮件自动识别" style="color:#10b981;">📧</span>';
-                    if (o.source === 'app') sourceHtml = '<span title="App/监控端识别" style="color:#38bdf8;">📱</span>';
-                    
                     const action = o.status === 'pending' ? `<button class="btn btn-sm" onclick="confirmOrder(${o.id})">标记到账</button>` : '';
                     
                     html += `<tr>
@@ -359,6 +373,14 @@
         function copyToClipboard(elementId, msg) {
             const text = document.getElementById(elementId).innerText;
             navigator.clipboard.writeText(text).then(() => { alert(msg); });
+        }
+
+        async function deleteProduct(productId) {
+            if (!confirm("确定要删除这个商品吗？删除后买家将无法访问，此操作不可恢复。")) return;
+            try {
+                const res = await fetch(`${API_BASE}/products/${productId}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+                if (res.ok) { refreshData(); }
+            } catch (err) { alert("删除失败"); }
         }
 
         function showAddProduct() { document.getElementById("modal-overlay").style.display = "flex"; }
