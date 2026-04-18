@@ -47,6 +47,8 @@ def run_migrations():
         try:
             # Add columns if they don't exist
             conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_source VARCHAR;"))
+            conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_no VARCHAR;"))
+            conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS merchant_id INTEGER;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS alipay_uid VARCHAR;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS points_balance FLOAT DEFAULT 0.0;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE;"))
