@@ -155,6 +155,14 @@ def check_emails_once():
         print(f"❌ Email Sync Error: {e}")
     return count
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan manager for FastAPI. 
+    Note: Background threads don't persist on Vercel, but we keep this for local dev.
+    """
+    yield
+
 app = FastAPI(title="PayFlow API", lifespan=lifespan)
 
 @app.get("/api/worker/check-emails")
