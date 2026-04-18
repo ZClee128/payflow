@@ -382,7 +382,8 @@ async def payment_notify(amount: float = Query(...), key: str = Query(...), db: 
 
 @app.get("/api/merchant/stats")
 async def get_merchant_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    orders = db.query(models.Order).join(models.Product).filter(models.Product.merchant_id == current_user.id).all()
+    # Use merchant_id directly so orphaned orders (from deleted products) are counted
+    orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).all()
     paid = [o for o in orders if o.status == "paid"]
     return {
         "total_sales": round(sum(o.amount for o in paid), 2),
@@ -406,10 +407,17 @@ async def update_settings(merchant_email: Optional[str] = Form(None), alipay_uid
 
 @app.get("/api/merchant/orders")
 async def list_merchant_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    orders = db.query(models.Order).join(models.Product).filter(models.Product.merchant_id == current_user.id).order_by(models.Order.created_at.desc()).limit(50).all()
+    # Use merchant_id directly to support traceability of orders from deleted products
+    orders = db.query(models.Order).filter(models.Order.merchant_id == current_user.id).order_by(models.Order.created_at.desc()).limit(50).all()
     return [{
-        "id": o.id, "product_name": o.product.name, "amount": o.amount, "net_profit": round(o.amount - o.commission_fee, 2),
-        "status": o.status, "source": o.payment_source, "created_at": o.created_at.strftime("%H:%M:%S")
+        "id": o.id, 
+        "order_no": o.order_no, 
+        "product_name": o.product.name if o.product else "已删商品", 
+        "amount": o.amount, 
+        "net_profit": round(o.amount - o.commission_fee, 2),
+        "status": o.status, 
+        "source": o.payment_source, 
+        "created_at": o.created_at.strftime("%H:%M:%S") if o.created_at else "--:--:--"
     } for o in orders]
 
 # Mount static files (Frontend) - ONLY in local development
