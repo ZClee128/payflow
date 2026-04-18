@@ -2,9 +2,12 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-python-multipart
 passlib[bcrypt]
 python-jose[cryptography]
+python-multipart
+imap-tools
 supabase
 python-dotenv
-imap-tools
+pydantic
+pydantic-settings
+requests
