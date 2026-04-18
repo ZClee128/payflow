@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家店铺 - PayFlow</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .store-header { text-align: center; margin-bottom: 48px; }
+        .merchant-avatar { width: 80px; height: 80px; background: var(--primary-gradient); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: white; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+        .product-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; display: flex; flex-direction: column; height: 100%; }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); border-color: var(--primary); }
+        
+        .p-name { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+        .p-price { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
+        .p-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; flex-grow: 1; min-height: 40px; }
+        
+        .buy-btn-sm { width: 100%; padding: 12px; background: var(--primary-gradient); border: none; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        
+        .empty-state { text-align: center; padding: 60px 0; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <div class="store-header">
+            <div class="merchant-avatar" id="avatar">?</div>
+            <h1 id="shop-name">商家店铺</h1>
+            <p class="subtitle" id="shop-email">欢迎光临我们的数字商店</p>
+        </div>
+
+        <div id="product-list" class="product-grid">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <div id="empty-msg" class="empty-state" style="display: none;">
+            <p>该商家暂时没有上架商品</p>
+        </div>
+
+        <footer style="margin-top: 80px; text-align: center; color: var(--text-muted); font-size: 14px;">
+            Powered by PayFlow - 个人数字产品聚合支付平台
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = (window.location.protocol === "file:" || window.location.hostname === "localhost")
+            ? "http://localhost:8000/api" 
+            : "/api";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let merchantId = urlParams.get('merchant');
+
+        if (!merchantId || merchantId === "undefined" || merchantId === "null") {
+            document.body.innerHTML = '<div class="container" style="text-align:center;margin-top:100px;"><h1>无效的店铺链接</h1><p>请确保链接包含有效的商家 ID。</p></div>';
+        } else {
+            loadStore();
+        }
+
+        async function loadStore() {
+            try {
+                // Load Merchant Info
+                const infoRes = await fetch(`${API_BASE}/merchants/${merchantId}/info`);
+                if (infoRes.ok) {
+                    const info = await infoRes.json();
+                    document.getElementById("shop-name").innerText = info.email.split('@')[0] + " 的小店";
+                    document.getElementById("shop-email").innerText = info.email;
+                    document.getElementById("avatar").innerText = info.email[0].toUpperCase();
+                }
+
+                // Load Products
+                const res = await fetch(`${API_BASE}/merchants/${merchantId}/products`);
+                const products = await res.json();
+                const container = document.getElementById("product-list");
+
+                if (products.length === 0) {
+                    document.getElementById("empty-msg").style.display = "block";
+                    return;
+                }
+
+                products.forEach(p => {
+                    const card = document.createElement("div");
+                    card.className = "product-card";
+                    card.onclick = () => window.location.href = `index.html?id=${p.id}`;
+                    card.innerHTML = `
+                        <div class="p-name">${p.name}</div>
+                        <div class="p-price">¥${p.price.toFixed(2)}</div>
+                        <div class="p-desc">${p.description || '全自动秒发货'}</div>
+                        <button class="buy-btn-sm">查看详情</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                alert("加载店铺失败，请稍后刷新重试");
+            }
+        }
+    </script>
+</body>
+</html>

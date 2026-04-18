@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+imap-tools
+supabase
+python-dotenv
+pydantic
+pydantic-settings
+requests

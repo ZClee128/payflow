@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayFlow 商家后台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .admin-container { max-width: 1000px !important; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--glass-bg); padding: 16px; border-radius: 16px; border: 1px solid var(--glass-border); text-align: center; }
+        .stat-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Store Link Box */
+        .store-url-box { background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--primary); padding: 16px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+        .url-text { font-family: monospace; color: var(--primary); font-size: 13px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; color: var(--text-main); font-size: 14px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--glass-border); }
+        th { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .status-paid { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-expired { background: rgba(239, 68, 68, 0.05); color: #94a3b8; }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; }
+        
+        .action-link { color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+        
+        /* Developer Settings */
+        .dev-box { background: #1e293b; border-radius: 12px; padding: 16px; margin-top: 24px; border: 1px solid #334155; }
+        .key-text { background: #0f172a; padding: 8px 12px; border-radius: 6px; font-family: monospace; color: #38bdf8; display: inline-block; margin: 8px 0; font-size: 13px; }
+        
+        .tab-btn { background: none; border: none; color: #94a3b8; padding: 8px 16px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+        .tab-content { display: none; margin-top: 16px; }
+        .tab-content.active { display: block; }
+
+        ol { padding-left: 20px; color: #94a3b8; font-size: 12px; line-height: 1.8; }
+        code { background: #0f172a; color: #38bdf8; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <!-- Dashboard Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div>
+                <h1 style="margin-bottom: 4px; font-size: 24px;">管理主页</h1>
+                <p class="subtitle" id="merchant-email">加载中...</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-sm" onclick="logout()">退出</button>
+                <button class="btn btn-sm" onclick="showAddProduct()">+ 发布商品</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="stats-grid">
+            <div class="stat-card" style="border-color: var(--primary); background: rgba(59, 130, 246, 0.1);">
+                <div class="stat-val" id="stat-balance" style="color: #38bdf8;">¥0.00</div>
+                <div class="stat-label">佣金余额 (积分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-sales">¥0.00</div>
+                <div class="stat-label">成交总额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-orders">0</div>
+                <div class="stat-label">成品订单</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="stat-pending" style="color: #f59e0b;">0</div>
+                <div class="stat-label">待支付</div>
+            </div>
+        </div>
+
+        <!-- Sharing Links -->
+        <div class="store-url-box">
+            <div>
+                <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">店铺公开链接:</div>
+                <div class="url-text" id="store-url-display">...</div>
+            </div>
+            <button class="btn btn-sm" style="background:var(--primary);" onclick="copyToClipboard('store-url-display', '店铺链接已复制')">复制链接</button>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 18px;">最近订单 (实时更新)</h2>
+                <span class="action-link" onclick="fetchOrders()">刷新</span>
+            </div>
+            <div id="orders-list-container">
+                <p class="subtitle">订单加载中...</p>
+            </div>
+        </div>
+
+        <!-- Product List -->
+        <div class="card">
+            <h2 style="font-size: 18px; margin-bottom: 12px;">商品管理</h2>
+            <div id="product-list-container">
+                <p class="subtitle">商品加载中...</p>
+            </div>
+        </div>
+
+        <!-- Automation Settings (Zero-App config) -->
+        <div class="dev-box">
+            <div style="display: flex; border-bottom: 1px solid #334155; margin-bottom: 16px;">
+                <button class="tab-btn active" onclick="switchTab('tab-email')">方案 A：邮件监控 (零 App)</button>
+                <button class="tab-btn" onclick="switchTab('tab-app')">方案 B：App 监控</button>
+            </div>
+
+            <!-- Email Setup -->
+            <div id="tab-email" class="tab-content active">
+                <p style="font-size: 13px; color: #e2e8f0; margin-bottom: 8px;"><b>推荐：设置简单，无需挂机</b></p>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">我的转发来源邮箱 (用于监控回执):</label>
+                        <input type="email" id="merchant-source-email" placeholder="例如: yourname@qq.com" style="background:#0f172a; border:1px solid #334155; color:white; padding:8px; border-radius:6px; width:100%;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">我的支付宝 UID (开启一键秒付):</label>
+                        <input type="text" id="merchant-alipay-uid" placeholder="2088xxxx" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; padding:8px; border-radius:6px; width:100%;">
+                    </div>
+                    <div style="align-self: flex-end;">
+                        <button class="btn btn-sm" onclick="saveSettings()">保存配置</button>
+                    </div>
+                </div>
+                <div style="background: #0f172a; padding: 12px; border-radius: 8px;">
+                    <p style="color: white; font-size: 12px; margin-bottom: 8px;">配置步骤：</p>
+                    <ol>
+                        <li>在支付宝/微信中开启“支付成功邮件提醒”。</li>
+                        <li>在你的邮箱设置中，添加一条自动转发规则。</li>
+                        <li>将所有来自 <code>service@alipay.com</code> 或 <code>wechatpay@tencent.com</code> 的邮件转发至：<code id="platform-mail">zclee520@163.com</code></li>
+                        <li>在此页面上方填入你的发信邮箱并保存。</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- App Setup -->
+            <div id="tab-app" class="tab-content">
+                <p style="font-size: 13px; color: #e2e8f0; margin-bottom: 8px;"><b>使用 V免签助手 等 Android 监听工具</b></p>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">回调地址 (Callback URL):</div>
+                    <code class="url-text" id="callback-url-display">...</code>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 12px; margin-bottom: 4px;">通讯密钥 (Callback Key):</div>
+                    <code class="key-text" id="callback-key-display">...</code>
+                </div>
+                <ol>
+                    <li>下载并安装监控端 App，开启通知读取权限。</li>
+                    <li>在 App 设置中填入上方提供的 URL 和 Key。</li>
+                    <li>保持手机后台运行即可自动发货。</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Create Product Modal -->
+        <div class="card" id="add-product-form" style="display: none; margin-top: 32px;">
+            <h2>发布新商品</h2>
+            <form id="product-form">
+                <div class="form-group"><label>商品名称</label><input type="text" name="name" required></div>
+                <div class="form-group" style="display: flex; gap: 20px;">
+                    <div style="flex: 1;"><label>价格 (元)</label><input type="number" step="0.01" name="price" required></div>
+                    <div style="flex: 1;"><label>发货类型</label><select name="delivery_type"><option value="link">链接</option><option value="text">卡密/文字</option></select></div>
+                </div>
+                <div class="form-group"><label>发货内容</label><textarea name="delivery_content" rows="2" required></textarea></div>
+                <div class="form-group"><label>我的收款码图片</label><input type="file" name="qr_code" accept="image/*" required></div>
+                <div style="display: flex; gap: 12px;"><button type="submit" class="btn">保存</button><button type="button" class="btn btn-secondary" onclick="hideAddProduct()">取消</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (window.location.protocol === "file:" || window.location.hostname === "localhost")
+            ? "http://localhost:8000/api" 
+            : "/api";
+
+        const token = localStorage.getItem("payflow_token");
+        if (!token) { window.location.href = "login.html"; }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            refreshData();
+            // Auto refresh stats/orders every 10 seconds
+            setInterval(refreshData, 10000);
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById("merchant-email").innerText = payload.sub;
+            } catch(e) {}
+        });
+
+        function refreshData() {
+            fetchStats();
+            fetchProducts();
+            fetchOrders();
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${API_BASE}/merchant/stats`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const stats = await res.json();
+                    document.getElementById("stat-sales").innerText = `¥${stats.total_sales.toFixed(2)}`;
+                    document.getElementById("stat-balance").innerText = `¥${stats.points_balance.toFixed(2)}`;
+                    document.getElementById("stat-orders").innerText = stats.order_count;
+                    document.getElementById("stat-pending").innerText = stats.pending_orders;
+                    
+                    document.getElementById("callback-key-display").innerText = stats.callback_key;
+                    document.getElementById("callback-url-display").innerText = `${window.location.origin}/api/callback/notify`;
+                    document.getElementById("merchant-source-email").value = stats.merchant_email || "";
+                    document.getElementById("merchant-alipay-uid").value = stats.alipay_uid || "";
+                    
+                    if (stats.points_balance <= 0) {
+                        document.getElementById("stat-balance").style.color = "#ef4444";
+                    } else {
+                        document.getElementById("stat-balance").style.color = "#38bdf8";
+                    }
+                    
+                    const merchantId = stats.merchant_id;
+                    document.getElementById("store-url-display").innerText = `${window.location.origin}/store.html?merchant=${merchantId}`;
+                }
+            } catch (err) {}
+        }
+
+        async function saveSettings() {
+            const email = document.getElementById("merchant-source-email").value;
+            const alipayUid = document.getElementById("merchant-alipay-uid").value;
+            
+            const formData = new FormData();
+            formData.append("merchant_email", email);
+            if (alipayUid) formData.append("alipay_uid", alipayUid);
+
+            try {
+                const res = await fetch(`${API_BASE}/merchant/settings`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` },
+                    body: formData
+                });
+                if (res.ok) alert("设置已保存！佣金充足时即可自动化发货。");
+            } catch (err) { alert("保存失败"); }
+        }
+
+        async function fetchOrders() {
+            try {
+                const res = await fetch(`${API_BASE}/merchant/orders`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const orders = await res.json();
+                const container = document.getElementById("orders-list-container");
+                if (orders.length === 0) { container.innerHTML = '<p class="subtitle">暂无订单记录</p>'; return; }
+
+                let html = '<table><thead><tr><th>时间</th><th>商品</th><th>金额</th><th>实收(扣佣)</th><th>来源</th><th>状态</th><th>操作</th></tr></thead><tbody>';
+                orders.forEach(o => {
+                    const statusClass = `status-${o.status}`;
+                    const statusText = o.status === 'paid' ? '已支付' : (o.status === 'expired' ? '已过期' : '等待中');
+                    
+                    // Source Icon Logic
+                    let sourceHtml = '<span title="手动确认">👤</span>';
+                    if (o.source === 'email') sourceHtml = '<span title="邮件自动识别" style="color:#10b981;">📧</span>';
+                    if (o.source === 'app') sourceHtml = '<span title="App/监控端识别" style="color:#38bdf8;">📱</span>';
+                    
+                    const action = o.status === 'pending' ? `<button class="btn btn-sm" onclick="confirmOrder(${o.id})">标记到账</button>` : '';
+                    
+                    html += `<tr>
+                        <td style="font-size:12px;color:var(--text-muted);">${o.created_at}</td>
+                        <td style="font-weight:600;">${o.product_name}</td>
+                        <td style="font-weight:700;">¥${o.amount.toFixed(2)}</td>
+                        <td style="color:#10b981;font-weight:600;">¥${o.net_profit.toFixed(2)}</td>
+                        <td style="text-align:center;font-size:16px;">${sourceHtml}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${action}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (err) {}
+        }
+
+        async function confirmOrder(id) {
+            if (!confirm("确认到账？")) return;
+            try {
+                const res = await fetch(`${API_BASE}/orders/${id}/confirm`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) refreshData();
+            } catch (err) {}
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function fetchProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/products`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const products = await res.json();
+                const container = document.getElementById("product-list-container");
+                if (products.length === 0) { container.innerHTML = '<p class="subtitle">暂无商品</p>'; return; }
+                let html = '<table><thead><tr><th>名称</th><th>价格</th><th>预览</th></tr></thead><tbody>';
+                products.forEach(p => { html += `<tr><td>${p.name}</td><td>¥${p.price.toFixed(2)}</td><td><a href="index.html?id=${p.id}" target="_blank" class="action-link">预览</a></td></tr>`; });
+                container.innerHTML = html + '</tbody></table>';
+            } catch (err) {}
+        }
+
+        function copyToClipboard(elementId, msg) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => { alert(msg); });
+        }
+
+        function showAddProduct() { document.getElementById("add-product-form").style.display = "block"; }
+        function hideAddProduct() { document.getElementById("add-product-form").style.display = "none"; }
+        function logout() { localStorage.removeItem("payflow_token"); window.location.href = "login.html"; }
+
+        document.getElementById("product-form").onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const res = await fetch(`${API_BASE}/products`, { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData });
+                if (res.ok) { hideAddProduct(); refreshData(); }
+            } catch (err) {}
+        };
+    </script>
+</body>
+</html>

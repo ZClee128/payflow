@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayFlow - 商家登录</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 id="auth-title">商家登录</h1>
+            <p class="subtitle" id="auth-subtitle">请进入您的管理面板</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label>电子邮箱</label>
+                    <input type="email" id="email" placeholder="admin@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn" id="submit-btn" style="margin-top: 20px;">
+                    立即登录
+                </button>
+                
+                <p class="subtitle" style="text-align: center; margin-top: 24px; cursor: pointer;" onclick="toggleMode()">
+                    <span id="toggle-text">还没有账号？点此注册</span>
+                </p>
+            </form>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="index.html" style="color: var(--text-muted); text-decoration: none; font-size: 14px;">← 返回店铺首页</a>
+        </div>
+    </div>
+
+    <script>
+        // Detect API base URL: Handle local file opening and localhost development
+        const API_BASE = (window.location.protocol === "file:" || window.location.hostname === "localhost")
+            ? "http://localhost:8000/api" 
+            : "/api";
+        
+        let isRegister = false;
+
+        function toggleMode() {
+            isRegister = !isRegister;
+            document.getElementById("auth-title").innerText = isRegister ? "商家注册" : "商家登录";
+            document.getElementById("submit-btn").innerText = isRegister ? "立即注册" : "立即登录";
+            document.getElementById("toggle-text").innerText = isRegister ? "已有账号？去登录" : "还没有账号？点此注册";
+        }
+
+        document.getElementById("login-form").onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const btn = document.getElementById("submit-btn");
+            
+            btn.disabled = true;
+            btn.innerText = "处理中...";
+
+            try {
+                if (isRegister) {
+                    // Register
+                    const formData = new FormData();
+                    formData.append("email", email);
+                    formData.append("password", password);
+                    
+                    const res = await fetch(`${API_BASE}/auth/register`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        alert("注册成功，请重新登录");
+                        toggleMode();
+                    } else {
+                        const data = await res.json();
+                        alert(data.detail || "注册失败");
+                    }
+                } else {
+                    // Login
+                    const formData = new FormData();
+                    formData.append("username", email);
+                    formData.append("password", password);
+                    
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem("payflow_token", data.access_token);
+                        window.location.href = "admin.html";
+                    } else {
+                        alert("邮箱或密码错误");
+                    }
+                }
+            } catch (err) {
+                alert("连接服务器失败");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = isRegister ? "立即注册" : "立即登录";
+            }
+        };
+    </script>
+</body>
+</html>
